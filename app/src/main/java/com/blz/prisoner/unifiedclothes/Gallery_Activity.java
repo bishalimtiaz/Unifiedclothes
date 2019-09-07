@@ -1,6 +1,7 @@
 package com.blz.prisoner.unifiedclothes;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import retrofit2.Call;
@@ -23,12 +24,14 @@ public class Gallery_Activity extends AppCompatActivity {
     private ApiInterface apiInterface;
     private RecyclerViewAdapter adapter;
 
+    Toolbar toolbar;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.gallery_activity);
 
-
+        toolbar = findViewById(R.id.toolbar);
         progressBar = findViewById(R.id.progressbar);
         recyclerView = findViewById(R.id.recyclerview);
         layoutManager = new GridLayoutManager(this,2);

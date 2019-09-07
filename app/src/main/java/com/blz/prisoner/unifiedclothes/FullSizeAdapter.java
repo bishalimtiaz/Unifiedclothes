@@ -39,6 +39,7 @@ import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
 import static androidx.core.app.ActivityCompat.requestPermissions;
+import static androidx.core.content.ContextCompat.startActivity;
 import static java.io.File.separator;
 
 public class FullSizeAdapter extends PagerAdapter implements ActivityCompat.OnRequestPermissionsResultCallback{
@@ -92,21 +93,54 @@ public class FullSizeAdapter extends PagerAdapter implements ActivityCompat.OnRe
         ebay_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Toast.makeText(context,Integer.toString(position),Toast.LENGTH_SHORT).show();
+                openUrlViaBrowser("http://www.ebaystores.co.uk/UnifiedClothes");
             }
         });
 
         amazon_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Toast.makeText(context,Integer.toString(position),Toast.LENGTH_SHORT).show();
+                openUrlViaBrowser("https://www.amazon.co.uk/stores/Unifiedclothes/node/10450243031");
             }
         });
 
+
+
+        /***Share Images***/
         share_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Toast.makeText(context,Integer.toString(position),Toast.LENGTH_SHORT).show();
+
+
+                BitmapDrawable drawable = (BitmapDrawable) imageView.getDrawable();
+                Bitmap bitmap = drawable.getBitmap();
+                String title  = "Please Visit http://www.ebaystores.co.uk/UnifiedClothes or https://www.amazon.co.uk/stores/Unifiedclothes/node/10450243031 To Get More New Dresses";
+
+
+
+                try {
+                    File file = new File(context.getExternalCacheDir(),"Dress.jpg");
+                    FileOutputStream fout = new FileOutputStream(file);
+                    bitmap.compress(Bitmap.CompressFormat.JPEG,100,fout);
+                    fout.flush();
+                    fout.close();
+                    file.setReadable(true,false);
+
+                    Intent intent = new Intent(Intent.ACTION_SEND);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    intent.putExtra(Intent.EXTRA_TEXT,title);
+                    intent.putExtra(Intent.EXTRA_STREAM,Uri.fromFile(file));
+                    intent.setType("image/jpeg");
+                    context.startActivity(Intent.createChooser(intent,"Share Image Via"));
+
+
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                    Toast.makeText(context,"File Not Found",Toast.LENGTH_SHORT).show();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
             }
         });
 
@@ -205,12 +239,11 @@ public class FullSizeAdapter extends PagerAdapter implements ActivityCompat.OnRe
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
-        //Toast.makeText(context,"Request code Matched",Toast.LENGTH_SHORT).show();
         if (requestCode == PERMISSION_REQUEST_CODE) {
 
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
-                Toast.makeText(context, "Permission Granted... \n Now you can use local drive .", Toast.LENGTH_LONG).show();
+                //Toast.makeText(context, "Permission Granted... \n Now you can use local drive .", Toast.LENGTH_LONG).show();
 
 
                 ContentResolver contentResolver = context.getContentResolver();
@@ -288,13 +321,13 @@ public class FullSizeAdapter extends PagerAdapter implements ActivityCompat.OnRe
             String fileName = String.format("%d.jpg",System.currentTimeMillis());
             File file = new File(directory, fileName);
 
-            FileOutputStream ouputStream = null;
+            FileOutputStream outputStream = null;
             try {
-                ouputStream = new FileOutputStream(file);
+                outputStream = new FileOutputStream(file);
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }
-            saveImageToStream(bitmap, ouputStream);
+            saveImageToStream(bitmap, outputStream);
 
             //file.getAbsolutePath();
             ContentValues values = contentValues();
@@ -322,7 +355,7 @@ public class FullSizeAdapter extends PagerAdapter implements ActivityCompat.OnRe
 
 
             try {
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
                 outputStream.flush();
                 outputStream.close();
             } catch (IOException e) {
@@ -330,6 +363,13 @@ public class FullSizeAdapter extends PagerAdapter implements ActivityCompat.OnRe
             }
 
         }
+    }
+
+
+    private void openUrlViaBrowser(String url){
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setData(Uri.parse(url));
+        context.startActivity(intent);
     }
 
 
