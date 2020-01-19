@@ -4,22 +4,28 @@
     android:orientation="vertical" android:layout_width="wrap_content"
     android:layout_height="wrap_content">
 
-    <LinearLayout
+    <RelativeLayout
+        android:layout_margin="2dp"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_height="wrap_content">
 
         <ImageView
             android:id="@+id/album_image"
-            android:layout_width="250dp"
-            android:layout_height="250dp"
-            android:layout_margin="10dp"
-            android:scaleType="fitCenter"
-            android:background="@drawable/gallery_image_shape"
-            android:adjustViewBounds="true">
+            android:layout_width="wrap_content"
+            android:layout_height="300dp"
+            android:padding="2dp"
+            android:scaleType="fitXY"
+            android:background="@drawable/gallery_image_shape">
 
         </ImageView>
 
-    </LinearLayout>
+        <CheckBox
+            android:id="@+id/checkbox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignEnd="@+id/album_image"
+            android:layout_alignRight="@+id/album_image"
+            android:layout_alignTop="@+id/album_image" />
+    </RelativeLayout>
 
 </androidx.cardview.widget.CardView>

@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Intent intent = new Intent(MainActivity.this,Gallery_Activity.class);
                 startActivity(intent);
-                //finish();
+
             }
         });
 
@@ -57,7 +57,10 @@ public class MainActivity extends AppCompatActivity {
         button4.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                openUrlViaBrowser("http://unifiedclothes.com/contact.php");
+                //openUrlViaBrowser("http://unifiedclothes.com/contact.php");
+                String addresses[] = {"sales@unifiedclothes.com"};
+                //String Subject = "";
+                composeEmail(addresses);
             }
         });
     }
@@ -66,6 +69,16 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setData(Uri.parse(url));
         startActivity(intent);
+    }
+
+    public void composeEmail(String[] addresses) {
+        Intent intent = new Intent(Intent.ACTION_SENDTO);
+        intent.setData(Uri.parse("mailto:")); // only email apps should handle this
+        intent.putExtra(Intent.EXTRA_EMAIL, addresses);
+        //intent.putExtra(Intent.EXTRA_SUBJECT, subject);
+        if (intent.resolveActivity(getPackageManager()) != null) {
+            startActivity(intent);
+        }
     }
 
 

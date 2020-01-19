@@ -6,7 +6,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:background="#FFFFFF">
 
     <RelativeLayout
         android:layout_width="wrap_content"
@@ -15,8 +16,8 @@
         android:layout_weight="5">
 
         <ImageView
-            android:layout_width="199dp"
-            android:layout_height="129dp"
+            android:layout_width="300dp"
+            android:layout_height="200dp"
             android:src="@mipmap/app"
             android:scaleType="centerInside"
             android:layout_centerInParent="true"
@@ -91,7 +92,7 @@
                 android:layout_gravity="center_vertical"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:text="Visit Our Ebay Shop"
+                android:text="Our Ebay Shop"
                 android:textSize="20sp"
                 android:textStyle="bold">
 
@@ -107,10 +108,13 @@
             android:background="@drawable/homepage_button"
             android:layout_below="@id/button2"
             android:layout_marginBottom="20dp"
-            android:padding="10dp">
+            android:padding="0dp"
+            android:paddingStart="10dp"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp">
 
             <ImageView
-                android:src="@mipmap/amazon"
+                app:srcCompat="@drawable/ic_amazon_icon"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:layout_gravity="center_vertical"
@@ -122,7 +126,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Visit Our Amazon Shop"
+                android:text="Our Amazon Shop"
                 android:layout_gravity="center_vertical"
                 android:textSize="20sp"
                 android:gravity="center"

@@ -1,11 +1,15 @@
 package com.blz.prisoner.unifiedclothes;
 
 import android.app.Activity;
+import android.app.DownloadManager;
+import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -29,35 +33,44 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.util.List;
 
+import java.util.List;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
-
+import static android.content.Context.DOWNLOAD_SERVICE;
 import static androidx.core.app.ActivityCompat.requestPermissions;
-import static androidx.core.content.ContextCompat.startActivity;
-import static java.io.File.separator;
+
 
 public class FullSizeAdapter extends PagerAdapter implements ActivityCompat.OnRequestPermissionsResultCallback{
 
     private Context context;
     private List<Images> imagesList;
 
+    FullScreenActivity fullScreenActivity;
+
     private Images images;
 
     private LayoutInflater inflater;
     private static final int PERMISSION_REQUEST_CODE = 1;
 
-    private Bitmap myBitMap;
+
+    //New Work
+
+    private long referenceID;
+    private DownloadManager downloadManager;
+
+    String url;
+
+    //New Work
 
 
     public FullSizeAdapter(Context context, List<Images> imagesList) {
         this.context = context;
         this.imagesList = imagesList;
+        fullScreenActivity = (FullScreenActivity) context;
     }
 
     @Override
@@ -80,6 +93,8 @@ public class FullSizeAdapter extends PagerAdapter implements ActivityCompat.OnRe
         View v = inflater.inflate(R.layout.full_screen_item_layout,null);
 
         final ImageView imageView = v.findViewById(R.id.img);
+
+
 
 
         ImageButton ebay_button = v.findViewById(R.id.ebay_button);
@@ -114,7 +129,7 @@ public class FullSizeAdapter extends PagerAdapter implements ActivityCompat.OnRe
 
                 BitmapDrawable drawable = (BitmapDrawable) imageView.getDrawable();
                 Bitmap bitmap = drawable.getBitmap();
-                String title  = "Please Visit http://www.ebaystores.co.uk/UnifiedClothes or https://www.amazon.co.uk/stores/Unifiedclothes/node/10450243031 To Get More New Dresses";
+                String title  = "Please Visit http://www.ebaystores.co.uk/UnifiedClothes or https://www.amazon.co.uk/unifiedclothes To Get More New Dresses";
 
 
 
@@ -131,6 +146,8 @@ public class FullSizeAdapter extends PagerAdapter implements ActivityCompat.OnRe
                     intent.putExtra(Intent.EXTRA_TEXT,title);
                     intent.putExtra(Intent.EXTRA_STREAM,Uri.fromFile(file));
                     intent.setType("image/jpeg");
+
+                    //need to fix the bug if no shareable app found
                     context.startActivity(Intent.createChooser(intent,"Share Image Via"));
 
 
@@ -151,11 +168,15 @@ public class FullSizeAdapter extends PagerAdapter implements ActivityCompat.OnRe
             @Override
             public void onClick(View view) {
 
-                BitmapDrawable drawable = (BitmapDrawable) imageView.getDrawable();
+                context.registerReceiver(receiver,new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+                fullScreenActivity.isregistered = true;
+                /*BitmapDrawable drawable = (BitmapDrawable) imageView.getDrawable();
                 Bitmap bitmap = drawable.getBitmap();
                 myBitMap = bitmap;
                 ContentResolver contentResolver = context.getContentResolver();
 
+                */
+                url = imagesList.get(position).getImagePath();
 
                 if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
 
@@ -167,8 +188,11 @@ public class FullSizeAdapter extends PagerAdapter implements ActivityCompat.OnRe
 
                         if(isExternalStorageWritable()){
 
-                            saveImage(bitmap,"Unifiedclothes",contentResolver);
-                            Toast.makeText(context,"Photo Saved To Phone Storage ",Toast.LENGTH_SHORT).show();
+                            //saveImage(bitmap,"Unifiedclothes",contentResolver);
+
+
+                            Toast.makeText(context,"Downloading.... ",Toast.LENGTH_SHORT).show();
+                            DownloadImage(url);
                         }
                         else{
 
@@ -181,7 +205,7 @@ public class FullSizeAdapter extends PagerAdapter implements ActivityCompat.OnRe
 
                     } else {
 
-                        requestPermission(); // Code for permission
+                        requestPermission();
                     }
 
                 }
@@ -190,6 +214,8 @@ public class FullSizeAdapter extends PagerAdapter implements ActivityCompat.OnRe
                     Toast.makeText(context,"Permission Is Granted..",Toast.LENGTH_SHORT).show();
 
                 }
+
+
             }
         });
 
@@ -228,11 +254,16 @@ public class FullSizeAdapter extends PagerAdapter implements ActivityCompat.OnRe
         }
     }
 
+
+
+
     /***If Media Storage Permission Is Not Granted Request Storage Permission***/
     private void requestPermission() {
 
         requestPermissions((Activity) context, new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERMISSION_REQUEST_CODE);
     }
+
+
 
 
     /***on RequestPermissionResult an Alert Dialogue Will Appear to Ask User To Enable Or Disable Storage Permission ***/
@@ -243,17 +274,19 @@ public class FullSizeAdapter extends PagerAdapter implements ActivityCompat.OnRe
 
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
-                //Toast.makeText(context, "Permission Granted... \n Now you can use local drive .", Toast.LENGTH_LONG).show();
 
 
-                ContentResolver contentResolver = context.getContentResolver();
+
 
                 /*** If Storage Permission Is Given, Check External storage is available for read and write***/
 
                 if (isExternalStorageWritable()) {
 
-                    saveImage(myBitMap, "Unifiedclothes", contentResolver);
-                    Toast.makeText(context, "Photo Saved To Phone Storage ", Toast.LENGTH_SHORT).show();
+
+                    Toast.makeText(context,"Downloading.... ",Toast.LENGTH_SHORT).show();
+                    DownloadImage(url);
+
+
                 } else {
 
                     Toast.makeText(context, "External Storage is Not Available For Write", Toast.LENGTH_SHORT).show();
@@ -267,11 +300,12 @@ public class FullSizeAdapter extends PagerAdapter implements ActivityCompat.OnRe
             }
         }
 
+
     }
 
 
     /***Checks if external storage is available for read and write ***/
-    public boolean isExternalStorageWritable() {
+    private boolean isExternalStorageWritable() {
         String state = Environment.getExternalStorageState();
         if (Environment.MEDIA_MOUNTED.equals(state)) {
             return true;
@@ -280,97 +314,142 @@ public class FullSizeAdapter extends PagerAdapter implements ActivityCompat.OnRe
     }
 
 
-    /*** Save Image To Storage***/
-
-    private void saveImage(Bitmap bitmap, String folderName, ContentResolver contentResolver){
-        //For API 29 or Later
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
-
-            ContentValues values = new ContentValues();
-
-            //Relative path of this media item within the storage device where it is persisted.
-            values.put(MediaStore.Images.Media.RELATIVE_PATH,"Pictures/" + folderName);
-
-            values.put(MediaStore.Images.Media.IS_PENDING,true);
-            Uri uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-
-            //saveImageToStream
-
-            if(uri != null){
-                try {
-                    saveImageToStream(bitmap, contentResolver.openOutputStream(uri));
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                }
-                values.put(MediaStore.Images.Media.IS_PENDING, false);
-                contentResolver.update(uri, values, null, null);
-            }
-
-
-        }
-
-        //Before API 29
-        else{
-
-            File directory = new File(Environment.getExternalStorageDirectory().toString() + separator + folderName);
-
-            if (!directory.exists()) {
-                directory.mkdirs();
-            }
-
-            String fileName = String.format("%d.jpg",System.currentTimeMillis());
-            File file = new File(directory, fileName);
-
-            FileOutputStream outputStream = null;
-            try {
-                outputStream = new FileOutputStream(file);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            }
-            saveImageToStream(bitmap, outputStream);
-
-            //file.getAbsolutePath();
-            ContentValues values = contentValues();
-            //values = contentValues();
-            values.put(MediaStore.Images.Media.DATA, file.getAbsolutePath());
-            contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-
-        }
-
-    }
-
-    private ContentValues contentValues(){
-        ContentValues values = new ContentValues();
-        values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
-        values.put(MediaStore.Images.Media.DATE_ADDED, System.currentTimeMillis() / 1000);
-        values.put(MediaStore.Images.Media.DATE_TAKEN, System.currentTimeMillis());
-        return values;
-
-    }
-
-
-    private  void saveImageToStream(Bitmap bitmap, OutputStream outputStream){
-
-        if(outputStream != null){
-
-
-            try {
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
-                outputStream.flush();
-                outputStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-        }
-    }
-
 
     private void openUrlViaBrowser(String url){
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setData(Uri.parse(url));
         context.startActivity(intent);
     }
+
+
+    /*** New Work***/
+
+
+    private void DownloadImage(String url){
+        String filename=url.substring(url.lastIndexOf("/")+1);
+        File file=new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES ).getPath()+"/UnifiedClothes/" + filename);
+        Log.d("Environment", "Environment extraData=" + file.getPath());
+
+        DownloadManager.Request request=new DownloadManager.Request(Uri.parse(url))
+                .setTitle(filename)
+                .setDescription("Downloading")
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                .setDestinationUri(Uri.fromFile(file))
+                .setAllowedOverMetered(true)
+                .setAllowedOverRoaming(true);
+        downloadManager= (DownloadManager) context.getSystemService(DOWNLOAD_SERVICE);
+        referenceID = downloadManager.enqueue(request);
+
+    }
+
+
+
+    private String DownloadStatus(Cursor cursor){
+
+        //column for download  status
+        int columnIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS);
+        int status = cursor.getInt(columnIndex);
+        //column for reason code if the download failed or paused
+        int columnReason = cursor.getColumnIndex(DownloadManager.COLUMN_REASON);
+        int reason = cursor.getInt(columnReason);
+
+        String statusText = "";
+        String reasonText = "";
+
+        switch(status){
+            case DownloadManager.STATUS_FAILED:
+                statusText = "STATUS_FAILED";
+                switch(reason){
+                    case DownloadManager.ERROR_CANNOT_RESUME:
+                        reasonText = "ERROR_CANNOT_RESUME";
+                        break;
+                    case DownloadManager.ERROR_DEVICE_NOT_FOUND:
+                        reasonText = "ERROR_DEVICE_NOT_FOUND";
+                        break;
+                    case DownloadManager.ERROR_FILE_ALREADY_EXISTS:
+                        reasonText = "ERROR_FILE_ALREADY_EXISTS";
+                        break;
+                    case DownloadManager.ERROR_FILE_ERROR:
+                        reasonText = "ERROR_FILE_ERROR";
+                        break;
+                    case DownloadManager.ERROR_HTTP_DATA_ERROR:
+                        reasonText = "ERROR_HTTP_DATA_ERROR";
+                        break;
+                    case DownloadManager.ERROR_INSUFFICIENT_SPACE:
+                        reasonText = "ERROR_INSUFFICIENT_SPACE";
+                        break;
+                    case DownloadManager.ERROR_TOO_MANY_REDIRECTS:
+                        reasonText = "ERROR_TOO_MANY_REDIRECTS";
+                        break;
+                    case DownloadManager.ERROR_UNHANDLED_HTTP_CODE:
+                        reasonText = "ERROR_UNHANDLED_HTTP_CODE";
+                        break;
+                    case DownloadManager.ERROR_UNKNOWN:
+                        reasonText = "ERROR_UNKNOWN";
+                        break;
+                }
+                break;
+            case DownloadManager.STATUS_PAUSED:
+                statusText = "STATUS_PAUSED";
+                switch(reason){
+                    case DownloadManager.PAUSED_QUEUED_FOR_WIFI:
+                        reasonText = "PAUSED_QUEUED_FOR_WIFI";
+                        break;
+                    case DownloadManager.PAUSED_UNKNOWN:
+                        reasonText = "PAUSED_UNKNOWN";
+                        break;
+                    case DownloadManager.PAUSED_WAITING_FOR_NETWORK:
+                        reasonText = "PAUSED_WAITING_FOR_NETWORK";
+                        break;
+                    case DownloadManager.PAUSED_WAITING_TO_RETRY:
+                        reasonText = "PAUSED_WAITING_TO_RETRY";
+                        break;
+                }
+                break;
+            case DownloadManager.STATUS_PENDING:
+                statusText = "STATUS_PENDING";
+                break;
+            case DownloadManager.STATUS_SUCCESSFUL:
+                statusText = "Image Saved Successfully";
+                break;
+
+
+        }
+
+        return statusText + reasonText;
+
+
+    }
+
+    BroadcastReceiver receiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+            String action = intent.getAction();
+
+            if (DownloadManager.ACTION_DOWNLOAD_COMPLETE.equals(action)){
+
+
+                DownloadManager.Query ImageDownloadQuery = new DownloadManager.Query();
+                //set the query filter to our previously Enqueued download
+                ImageDownloadQuery.setFilterById(referenceID);
+
+                //Query the download manager about downloads that have been requested.
+                Cursor cursor = downloadManager.query(ImageDownloadQuery);
+
+                if(cursor.moveToFirst()){
+
+                    Toast.makeText(context,DownloadStatus(cursor),Toast.LENGTH_SHORT).show();
+
+                }
+
+
+
+            }
+
+        }
+    };
 
 
 
